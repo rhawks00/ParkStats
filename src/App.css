@@ -143,7 +143,7 @@ header h1 {
 .sign-out-btn:hover { color: var(--text); border-color: var(--text-dim); }
 
 /* Main */
-main { max-width: 900px; margin: 0 auto; padding: 20px 24px; }
+main { width: 100%; max-width: 900px; margin: 0 auto; padding: 20px 24px; }
 
 /* Section Label */
 .section-label {
