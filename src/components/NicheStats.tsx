@@ -8,7 +8,6 @@ interface Props {
 export function NicheStats({ stats, games }: Props) {
   if (!stats.length) return null;
 
-  const wins = games.filter((g) => g.home_score !== g.away_score).length;
   const record = games.reduce(
     (acc, g) => {
       if (g.home_score > g.away_score) acc.homeWins++;

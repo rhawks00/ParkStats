@@ -202,8 +202,6 @@ function App() {
       .slice(0, leaderboardCount);
   }, [playerMap, batCat, minPA, leaderboardCount]);
 
-  const isPitchRateStat = (cat: PitchCat) => ['era', 'whip', 'k9'].includes(cat);
-
   const pitchLeaderboard = useMemo(() => {
     const entries = Object.entries(pitcherMap);
 
@@ -592,7 +590,7 @@ function App() {
 
                 <div className="panel">
                   <h3 className="panel-title" style={{ color: BAT_CATS.find((c) => c.id === batCat)!.color }}>
-                    {{ avg: 'Batting Average', obp: 'On-Base Pct', slg: 'Slugging Pct', ops: 'OPS', krate: 'Strikeout Rate', bbrate: 'Walk Rate', rbi: 'RBI', bb: 'Walk', singles: 'Singles' }[batCat] || BAT_CATS.find((c) => c.id === batCat)!.label} Leaders (Your Games)
+                    {({ hr: 'HR', sb: 'Stolen Base', hits: 'Hit', singles: 'Singles', doubles: 'Doubles', triples: 'Triples', rbi: 'RBI', bb: 'Walk', avg: 'Batting Average', obp: 'On-Base Pct', slg: 'Slugging Pct', ops: 'OPS', krate: 'Strikeout Rate', bbrate: 'Walk Rate' } as Record<string, string>)[batCat]} Leaders (Your Games)
                   </h3>
                   {batLeaderboard.length === 0 && <div className="empty-msg">No data for selected games</div>}
                   {batLeaderboard.map((entry, i) => (
