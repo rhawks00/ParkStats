@@ -713,6 +713,12 @@ function App() {
                 <div className="panel">
                   <h3 className="panel-title" style={{ color: PITCH_CATS.find((c) => c.id === pitchCat)!.color }}>
                     {{ strikeouts: 'Strikeout', wins: 'Win', era: 'ERA', whip: 'WHIP', k9: 'K/9', innings: 'Innings Pitched', saves: 'Save' }[pitchCat]} Leaders (Your Games)
+                    {(pitchCat === 'era' || pitchCat === 'whip') && (
+                      <span className="info-tip">
+                        i
+                        <span className="info-tip-text">Starting pitchers only</span>
+                      </span>
+                    )}
                   </h3>
                   {pitchLeaderboard.length === 0 && <div className="empty-msg">No pitching data for selected games</div>}
                   {pitchLeaderboard.map((entry, i) => (

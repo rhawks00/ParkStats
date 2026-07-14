@@ -975,14 +975,23 @@ main { max-width: 900px; margin: 0 auto; padding: 20px 24px; }
 }
 
 /* Footer */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app > main {
+  flex: 1;
+}
+
 .site-footer {
   text-align: center;
-  padding: 24px 16px;
+  padding: 16px;
   font-family: monospace;
-  font-size: 13px;
+  font-size: 11px;
   color: var(--text-faint);
-  border-top: 1px solid var(--border-light);
-  margin-top: 40px;
+  margin-top: auto;
 }
 
 .site-footer a {
