@@ -482,6 +482,117 @@ main { width: 100%; max-width: 900px; margin: 0 auto; padding: 20px 24px; }
   font-family: monospace;
 }
 
+/* Team Stats */
+.team-sort-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.team-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.team-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.team-card-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.team-card-abbr {
+  font-size: 22px;
+  font-weight: 800;
+  font-family: monospace;
+  color: var(--text);
+}
+
+.team-card-record {
+  font-size: 15px;
+  font-family: monospace;
+  color: var(--text-dim);
+}
+
+.team-card-pct {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.team-card-section {
+  margin-bottom: 14px;
+}
+
+.team-card-section:last-child {
+  margin-bottom: 0;
+}
+
+.team-card-section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.team-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+  gap: 8px;
+}
+
+.team-stat {
+  text-align: center;
+}
+
+.team-stat-val {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: monospace;
+  color: var(--text);
+}
+
+.team-stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.team-card-highlight {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.team-highlight-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.team-highlight-val {
+  color: var(--text-dim);
+}
+
 /* Player Select */
 .player-select-area { margin-bottom: 16px; }
 
@@ -1065,4 +1176,9 @@ main { width: 100%; max-width: 900px; margin: 0 auto; padding: 20px 24px; }
     font-size: 14px;
     padding: 10px 12px;
   }
+
+  .team-cards { grid-template-columns: 1fr; }
+  .team-sort-row { flex-wrap: wrap; }
+  .team-sort-row .cat-pills { display: none; }
+  .team-sort-row .cat-select { display: block; }
 }

@@ -13,7 +13,7 @@ const MLB_TEAMS = [
   'PHI','PIT','SD','SEA','SF','STL','TB','TEX','TOR','WSH',
 ];
 
-type View = 'leaderboard' | 'spray' | 'pitching';
+type View = 'leaderboard' | 'spray' | 'pitching' | 'teams';
 type BatCat = 'hr' | 'sb' | 'hits' | 'singles' | 'doubles' | 'triples' | 'rbi' | 'bb' | 'avg' | 'obp' | 'slg' | 'ops' | 'krate' | 'bbrate';
 type PitchCat = 'strikeouts' | 'wins' | 'era' | 'whip' | 'k9' | 'innings' | 'saves';
 
@@ -450,6 +450,144 @@ function App() {
     return `${top[0]} (${top[1]})`;
   }, [selectedGames]);
 
+  type TeamSort = 'games' | 'winPct' | 'avg' | 'hr' | 'era' | 'rpg';
+  const [teamSort, setTeamSort] = useState<TeamSort>('games');
+
+  const teamStats = useMemo(() => {
+    const teams: Record<string, {
+      games: number; wins: number; losses: number; ties: number;
+      rs: number; ra: number;
+      ab: number; hits: number; hr: number; doubles: number; triples: number; singles: number; walks: number; sb: number; rbis: number; strikeouts: number;
+      ip: number; er: number; kPitched: number; bbAllowed: number;
+      bestGame: { desc: string; margin: number } | null;
+      mvp: { name: string; val: number } | null;
+      bestStarter: { name: string; desc: string } | null;
+    }> = {};
+
+    for (const g of selectedGames) {
+      for (const team of [g.home_team, g.away_team]) {
+        if (!teams[team]) {
+          teams[team] = { games: 0, wins: 0, losses: 0, ties: 0, rs: 0, ra: 0, ab: 0, hits: 0, hr: 0, doubles: 0, triples: 0, singles: 0, walks: 0, sb: 0, rbis: 0, strikeouts: 0, ip: 0, er: 0, kPitched: 0, bbAllowed: 0, bestGame: null, mvp: null, bestStarter: null };
+        }
+        const t = teams[team];
+        t.games++;
+        const isHome = team === g.home_team;
+        const teamScore = isHome ? g.home_score : g.away_score;
+        const oppScore = isHome ? g.away_score : g.home_score;
+        t.rs += teamScore;
+        t.ra += oppScore;
+        if (teamScore > oppScore) t.wins++;
+        else if (teamScore < oppScore) t.losses++;
+        else t.ties++;
+
+        const totalRuns = g.home_score + g.away_score;
+        if (!t.bestGame || totalRuns > t.bestGame.margin) {
+          t.bestGame = { desc: `${g.away_team} ${g.away_score}–${g.home_score} ${g.home_team}`, margin: totalRuns };
+        }
+      }
+    }
+
+    for (const s of filteredStats) {
+      const t = teams[s.team];
+      if (!t) continue;
+      t.ab += s.at_bats;
+      t.hits += s.hits;
+      t.hr += s.home_runs;
+      t.doubles += s.doubles;
+      t.triples += s.triples;
+      t.singles += s.hits - s.doubles - s.triples - s.home_runs;
+      t.walks += s.walks;
+      t.sb += s.stolen_bases;
+      t.rbis += s.rbis;
+      t.strikeouts += s.strikeouts;
+    }
+
+    for (const s of filteredPitchers) {
+      const t = teams[s.team];
+      if (!t) continue;
+      t.ip += s.innings_pitched;
+      t.er += s.earned_runs;
+      t.kPitched += s.strikeouts_pitched;
+      t.bbAllowed += s.walks_allowed;
+    }
+
+    // MVP per team: highest OPS with min 3 AB
+    const playersByTeam: Record<string, Record<number, { name: string; ab: number; hits: number; walks: number; singles: number; doubles: number; triples: number; hr: number }>> = {};
+    for (const s of filteredStats) {
+      if (!playersByTeam[s.team]) playersByTeam[s.team] = {};
+      const pm = playersByTeam[s.team];
+      if (!pm[s.player_id]) pm[s.player_id] = { name: s.player_name, ab: 0, hits: 0, walks: 0, singles: 0, doubles: 0, triples: 0, hr: 0 };
+      const p = pm[s.player_id];
+      p.ab += s.at_bats;
+      p.hits += s.hits;
+      p.walks += s.walks;
+      p.singles += s.hits - s.doubles - s.triples - s.home_runs;
+      p.doubles += s.doubles;
+      p.triples += s.triples;
+      p.hr += s.home_runs;
+    }
+    for (const [team, players] of Object.entries(playersByTeam)) {
+      const t = teams[team];
+      if (!t) continue;
+      const qualified = Object.values(players).filter(p => p.ab >= 3);
+      if (qualified.length) {
+        const best = qualified.sort((a, b) => {
+          const opsA = (a.ab > 0 ? (a.hits + a.walks) / (a.ab + a.walks) : 0) + (a.ab > 0 ? (a.singles + a.doubles * 2 + a.triples * 3 + a.hr * 4) / a.ab : 0);
+          const opsB = (b.ab > 0 ? (b.hits + b.walks) / (b.ab + b.walks) : 0) + (b.ab > 0 ? (b.singles + b.doubles * 2 + b.triples * 3 + b.hr * 4) / b.ab : 0);
+          return opsB - opsA;
+        })[0];
+        const ops = (best.ab > 0 ? (best.hits + best.walks) / (best.ab + best.walks) : 0) + (best.ab > 0 ? (best.singles + best.doubles * 2 + best.triples * 3 + best.hr * 4) / best.ab : 0);
+        t.mvp = { name: best.name, val: ops };
+      }
+    }
+
+    // Best starter per team
+    const startersByTeam: Record<string, { name: string; ip: number; er: number; k: number }[]> = {};
+    for (const s of filteredPitchers) {
+      if (!s.is_starter) continue;
+      if (!startersByTeam[s.team]) startersByTeam[s.team] = [];
+      startersByTeam[s.team].push({ name: s.player_name, ip: s.innings_pitched, er: s.earned_runs, k: s.strikeouts_pitched });
+    }
+    for (const [team, starters] of Object.entries(startersByTeam)) {
+      const t = teams[team];
+      if (!t) continue;
+      const best = starters.filter(s => s.ip > 0).sort((a, b) => {
+        const eraA = (a.er / a.ip) * 9;
+        const eraB = (b.er / b.ip) * 9;
+        if (eraA !== eraB) return eraA - eraB;
+        return b.ip - a.ip;
+      })[0];
+      if (best) {
+        const era = ((best.er / best.ip) * 9).toFixed(2);
+        t.bestStarter = { name: best.name, desc: `${best.ip.toFixed(1)} IP, ${era} ERA, ${best.k} K` };
+      }
+    }
+
+    const result = Object.entries(teams).map(([abbr, t]) => {
+      const avg = t.ab > 0 ? t.hits / t.ab : 0;
+      const pa = t.ab + t.walks;
+      const obp = pa > 0 ? (t.hits + t.walks) / pa : 0;
+      const slg = t.ab > 0 ? (t.singles + t.doubles * 2 + t.triples * 3 + t.hr * 4) / t.ab : 0;
+      const ops = obp + slg;
+      const era = t.ip > 0 ? (t.er / t.ip) * 9 : 0;
+      const rpg = t.games > 0 ? t.rs / t.games : 0;
+      const rapg = t.games > 0 ? t.ra / t.games : 0;
+      const winPct = (t.wins + t.losses) > 0 ? t.wins / (t.wins + t.losses) : 0;
+      return { abbr, ...t, avg, obp, slg, ops, era, rpg, rapg, winPct };
+    });
+
+    const sortFns: Record<TeamSort, (a: typeof result[0], b: typeof result[0]) => number> = {
+      games: (a, b) => b.games - a.games,
+      winPct: (a, b) => b.winPct - a.winPct,
+      avg: (a, b) => b.avg - a.avg,
+      hr: (a, b) => b.hr - a.hr,
+      era: (a, b) => a.era - b.era,
+      rpg: (a, b) => b.rpg - a.rpg,
+    };
+
+    return result.sort(sortFns[teamSort]);
+  }, [selectedGames, filteredStats, filteredPitchers, teamSort]);
+
   if (loading) {
     return <div className="app loading-screen"><div className="spinner" /></div>;
   }
@@ -560,7 +698,7 @@ function App() {
 
             {/* Tabs */}
             <div className="tab-bar">
-              {([['leaderboard', 'Leaderboards'], ['spray', 'Spray Charts'], ['pitching', 'Pitching']] as [View, string][]).map(([id, label]) => (
+              {([['leaderboard', 'Hitting'], ['pitching', 'Pitching'], ['teams', 'Team Stats'], ['spray', 'Spray Charts']] as [View, string][]).map(([id, label]) => (
                 <button key={id} className={`tab ${view === id ? 'active' : ''}`}
                   onClick={() => { setView(id); if (id !== 'spray') setSelectedPlayer(null); }}>
                   {label}
@@ -728,10 +866,102 @@ function App() {
                         <StatBar
                           label={`${entry.name} (${entry.team})`}
                           value={entry.display}
-                          max={pitchLeaderboard[0]?.val || 1}
+                          max={(pitchCat === 'era' || pitchCat === 'whip') ? pitchLeaderboard[pitchLeaderboard.length - 1]?.val || 1 : pitchLeaderboard[0]?.val || 1}
                           color={PITCH_CATS.find((c) => c.id === pitchCat)!.color}
                         />
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TEAM STATS VIEW */}
+            {view === 'teams' && (
+              <div>
+                <div className="team-sort-row">
+                  <span className="section-label" style={{ marginBottom: 0 }}>Sort by</span>
+                  <div className="cat-pills">
+                    {([['games', 'Games'], ['winPct', 'Win %'], ['rpg', 'R/G'], ['avg', 'AVG'], ['hr', 'HR'], ['era', 'ERA']] as [TeamSort, string][]).map(([id, label]) => (
+                      <button key={id} className={`cat-pill ${teamSort === id ? 'active' : ''}`}
+                        style={teamSort === id ? { background: '#3b82f622', borderColor: '#3b82f6', color: '#3b82f6' } : {}}
+                        onClick={() => setTeamSort(id)}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <select className="cat-select" value={teamSort} onChange={(e) => setTeamSort(e.target.value as TeamSort)}>
+                    {[['games', 'Games'], ['winPct', 'Win %'], ['rpg', 'R/G'], ['avg', 'AVG'], ['hr', 'HR'], ['era', 'ERA']].map(([id, label]) => (
+                      <option key={id} value={id}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {teamStats.length === 0 && <div className="panel"><div className="empty-msg">No team data for selected games</div></div>}
+
+                <div className="team-cards">
+                  {teamStats.map((t) => (
+                    <div key={t.abbr} className="team-card">
+                      <div className="team-card-header">
+                        <span className="team-card-abbr">{t.abbr}</span>
+                        <span className="team-card-record">
+                          {t.wins}-{t.losses}{t.ties > 0 ? `-${t.ties}` : ''}
+                          {(t.wins + t.losses) > 0 && <span className="team-card-pct"> ({(t.winPct * 100).toFixed(0)}%)</span>}
+                        </span>
+                      </div>
+
+                      <div className="team-card-section">
+                        <div className="team-card-section-title">Overview</div>
+                        <div className="team-stat-grid">
+                          <div className="team-stat"><div className="team-stat-val">{t.games}</div><div className="team-stat-label">Games</div></div>
+                          <div className="team-stat"><div className="team-stat-val" style={{ color: '#22c55e' }}>{t.rpg.toFixed(1)}</div><div className="team-stat-label">R/G</div></div>
+                          <div className="team-stat"><div className="team-stat-val" style={{ color: '#ef4444' }}>{t.rapg.toFixed(1)}</div><div className="team-stat-label">RA/G</div></div>
+                          <div className="team-stat"><div className="team-stat-val" style={{ color: '#f59e0b' }}>{t.rs}</div><div className="team-stat-label">Runs</div></div>
+                        </div>
+                      </div>
+
+                      <div className="team-card-section">
+                        <div className="team-card-section-title">Batting</div>
+                        <div className="team-stat-grid">
+                          <div className="team-stat"><div className="team-stat-val" style={{ color: '#06b6d4' }}>{t.avg.toFixed(3).replace(/^0/, '')}</div><div className="team-stat-label">AVG</div></div>
+                          <div className="team-stat"><div className="team-stat-val" style={{ color: '#818cf8' }}>{t.obp.toFixed(3).replace(/^0/, '')}</div><div className="team-stat-label">OBP</div></div>
+                          <div className="team-stat"><div className="team-stat-val" style={{ color: '#fb923c' }}>{t.slg.toFixed(3).replace(/^0/, '')}</div><div className="team-stat-label">SLG</div></div>
+                          <div className="team-stat"><div className="team-stat-val" style={{ color: '#ef4444' }}>{t.hr}</div><div className="team-stat-label">HR</div></div>
+                          <div className="team-stat"><div className="team-stat-val">{t.hits}</div><div className="team-stat-label">H</div></div>
+                          <div className="team-stat"><div className="team-stat-val" style={{ color: '#a855f7' }}>{t.sb}</div><div className="team-stat-label">SB</div></div>
+                        </div>
+                        {t.mvp && (
+                          <div className="team-card-highlight">
+                            <span className="team-highlight-label">MVP</span>
+                            <span className="team-highlight-val">{t.mvp.name} <span style={{ color: '#f59e0b' }}>({t.mvp.val.toFixed(3)} OPS)</span></span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="team-card-section">
+                        <div className="team-card-section-title">Pitching</div>
+                        <div className="team-stat-grid">
+                          <div className="team-stat"><div className="team-stat-val" style={{ color: '#06b6d4' }}>{t.era.toFixed(2)}</div><div className="team-stat-label">ERA</div></div>
+                          <div className="team-stat"><div className="team-stat-val" style={{ color: '#ef4444' }}>{t.kPitched}</div><div className="team-stat-label">K</div></div>
+                          <div className="team-stat"><div className="team-stat-val" style={{ color: '#14b8a6' }}>{t.bbAllowed}</div><div className="team-stat-label">BB</div></div>
+                          <div className="team-stat"><div className="team-stat-val">{t.ip.toFixed(1)}</div><div className="team-stat-label">IP</div></div>
+                        </div>
+                        {t.bestStarter && (
+                          <div className="team-card-highlight">
+                            <span className="team-highlight-label">Best Start</span>
+                            <span className="team-highlight-val">{t.bestStarter.name} <span style={{ color: '#22c55e' }}>({t.bestStarter.desc})</span></span>
+                          </div>
+                        )}
+                      </div>
+
+                      {t.bestGame && (
+                        <div className="team-card-section">
+                          <div className="team-card-highlight">
+                            <span className="team-highlight-label">Best Game</span>
+                            <span className="team-highlight-val">{t.bestGame.desc}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
