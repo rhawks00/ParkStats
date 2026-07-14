@@ -165,7 +165,7 @@ function App() {
 
   // Qualification thresholds: 1 PA per game for rate batting stats, 10% of total IP for ERA
   const totalGamesSelected = selectedGameIds.size;
-  const minPA = Math.max(totalGamesSelected, 1);
+  const minPA = Math.max(Math.floor(totalGamesSelected / 2), 1);
   const isRateStat = (cat: BatCat) => ['avg', 'obp', 'slg', 'ops', 'krate', 'bbrate'].includes(cat);
 
   const batLeaderboard = useMemo(() => {
@@ -464,6 +464,9 @@ function App() {
             <p className="setup-notice">Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in a .env file to enable auth.</p>
           )}
         </div>
+        <footer className="site-footer">
+          Built by <a href="https://ryanhawks.com" target="_blank" rel="noopener noreferrer">Ryan Hawks</a>
+        </footer>
       </div>
     );
   }
@@ -591,6 +594,12 @@ function App() {
                 <div className="panel">
                   <h3 className="panel-title" style={{ color: BAT_CATS.find((c) => c.id === batCat)!.color }}>
                     {({ hr: 'HR', sb: 'Stolen Base', hits: 'Hit', singles: 'Singles', doubles: 'Doubles', triples: 'Triples', rbi: 'RBI', bb: 'Walk', avg: 'Batting Average', obp: 'On-Base Pct', slg: 'Slugging Pct', ops: 'OPS', krate: 'Strikeout Rate', bbrate: 'Walk Rate' } as Record<string, string>)[batCat]} Leaders (Your Games)
+                    {isRateStat(batCat) && (
+                      <span className="info-tip">
+                        i
+                        <span className="info-tip-text">Qualified: min {minPA} PA (half of {totalGamesSelected} games selected)</span>
+                      </span>
+                    )}
                   </h3>
                   {batLeaderboard.length === 0 && <div className="empty-msg">No data for selected games</div>}
                   {batLeaderboard.map((entry, i) => (
@@ -804,6 +813,10 @@ function App() {
       </main>
 
       {showAddGame && <AddGameModal onClose={() => setShowAddGame(false)} onGameAdded={loadData} favoriteTeam={favoriteTeam} />}
+
+      <footer className="site-footer">
+        Built by <a href="https://ryanhawks.com" target="_blank" rel="noopener noreferrer">Ryan Hawks</a>
+      </footer>
     </div>
   );
 }

@@ -627,7 +627,7 @@ main { max-width: 900px; margin: 0 auto; padding: 20px 24px; }
 .play-desc { color: #cbd5e1; }
 
 /* Login */
-.login-screen { display: flex; align-items: center; justify-content: center; }
+.login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
 .login-card {
   text-align: center;
@@ -929,6 +929,70 @@ main { max-width: 900px; margin: 0 auto; padding: 20px 24px; }
 }
 
 .add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Info tooltip */
+.info-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--border-light);
+  color: var(--text-dim);
+  font-size: 10px;
+  font-style: italic;
+  font-weight: 700;
+  font-family: serif;
+  margin-left: 6px;
+  cursor: help;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.info-tip-text {
+  display: none;
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-style: normal;
+  font-family: monospace;
+  font-weight: 400;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+  white-space: nowrap;
+  z-index: 30;
+}
+
+.info-tip:hover .info-tip-text {
+  display: block;
+}
+
+/* Footer */
+.site-footer {
+  text-align: center;
+  padding: 24px 16px;
+  font-family: monospace;
+  font-size: 13px;
+  color: var(--text-faint);
+  border-top: 1px solid var(--border-light);
+  margin-top: 40px;
+}
+
+.site-footer a {
+  color: var(--green);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  text-decoration: underline;
+}
 
 /* Responsive */
 @media (max-width: 700px) {
