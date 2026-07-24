@@ -1096,7 +1096,7 @@ function App() {
                           .filter((s) => s.player_id === selectedPlayer)
                           .flatMap((s) => {
                             const game = games.find((g) => g.game_pk === s.game_pk);
-                            const dateStr = game ? new Date(game.game_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+                            const dateStr = game ? new Date(game.game_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
                             return s.hit_events.map((e, i) => ({ ...e, dateStr, key: `${s.game_pk}-${i}` }));
                           })
                           .map((play) => (
