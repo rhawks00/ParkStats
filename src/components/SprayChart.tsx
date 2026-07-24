@@ -43,7 +43,8 @@ const LEGEND: [string, string, string][] = [
   ['3B', '#f59e0b', 'triangle'],
   ['2B', '#3b82f6', 'diamond'],
   ['1B', '#22c55e', 'circle'],
-  ['Out', '#6b7280', 'x'],
+  ['FO', '#6b7280', 'circle'],
+  ['GO', '#6b7280', 'x'],
 ];
 
 function renderMarker(event: HitEvent, i: number, x: number, y: number, color: string) {
@@ -100,7 +101,11 @@ export function SprayChart({ events }: Props) {
     const color = HIT_COLORS[event.type] || HIT_COLORS.out;
     const isFairHit = ['home_run', 'triple', 'double', 'single'].includes(event.type);
     const [x, y] = transformCoords(event.coord_x, event.coord_y, isFairHit);
-    return renderMarker(event, i, x, y, color);
+    return (
+      <g key={i} style={{ animation: `spray-pop 0.2s ease-out ${i * 40}ms both`, transformOrigin: `${x}px ${y}px` }}>
+        {renderMarker(event, i, x, y, color)}
+      </g>
+    );
   });
 
   return (

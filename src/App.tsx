@@ -1086,7 +1086,7 @@ function App() {
                           <div className="big-stat"><div className="big-stat-val" style={{ color: '#ef4444' }}>{selectedPlayerData.hr}</div><div className="big-stat-label">HR</div></div>
                         </div>
                       </div>
-                      <SprayChart events={selectedPlayerData.events} />
+                      <SprayChart key={selectedPlayer} events={selectedPlayerData.events} />
                     </div>
 
                     <div className="panel">
