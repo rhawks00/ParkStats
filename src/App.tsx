@@ -13,6 +13,39 @@ const MLB_TEAMS = [
   'PHI','PIT','SD','SEA','SF','STL','TB','TEX','TOR','WSH',
 ];
 
+const TEAM_COLORS: Record<string, [string, string]> = {
+  ARI: ['#A71930', '#E3D4AD'],
+  ATL: ['#CE1141', '#13274F'],
+  BAL: ['#DF4601', '#000000'],
+  BOS: ['#BD3039', '#0C2340'],
+  CHC: ['#0E3386', '#CC3433'],
+  CIN: ['#C6011F', '#000000'],
+  CLE: ['#00385D', '#E50022'],
+  COL: ['#33006F', '#C4CED4'],
+  CWS: ['#27251F', '#C4CED4'],
+  DET: ['#0C2340', '#FA4616'],
+  HOU: ['#002D62', '#EB6E1F'],
+  KC: ['#004687', '#BD9B60'],
+  LAA: ['#BA0021', '#003263'],
+  LAD: ['#005A9C', '#EF3E42'],
+  MIA: ['#00A3E0', '#EF3340'],
+  MIL: ['#FFC52F', '#12284B'],
+  MIN: ['#002B5C', '#D31145'],
+  NYM: ['#002D72', '#FF5910'],
+  NYY: ['#003087', '#C4CED4'],
+  OAK: ['#003831', '#EFB21E'],
+  PHI: ['#E81828', '#002D72'],
+  PIT: ['#FDB827', '#27251F'],
+  SD: ['#2F241D', '#FFC425'],
+  SEA: ['#0C2C56', '#005C5C'],
+  SF: ['#FD5A1E', '#27251F'],
+  STL: ['#C41E3A', '#0C2340'],
+  TB: ['#092C5C', '#8FBCE6'],
+  TEX: ['#003278', '#C0111F'],
+  TOR: ['#134A8E', '#1D2D5C'],
+  WSH: ['#AB0003', '#14225A'],
+};
+
 type View = 'leaderboard' | 'spray' | 'pitching' | 'teams';
 type BatCat = 'hr' | 'sb' | 'hits' | 'singles' | 'doubles' | 'triples' | 'rbi' | 'bb' | 'avg' | 'obp' | 'slg' | 'ops' | 'krate' | 'bbrate';
 type PitchCat = 'strikeouts' | 'wins' | 'era' | 'whip' | 'k9' | 'innings' | 'saves';
@@ -109,10 +142,10 @@ function App() {
   }, [games]);
 
   const playerMap = useMemo(() => {
-    const map: Record<number, { name: string; team: string; latestDate: string; games: Set<number>; hr: number; sb: number; hits: number; doubles: number; triples: number; singles: number; at_bats: number; walks: number; strikeouts: number; rbis: number }> = {};
+    const map: Record<number, { name: string; team: string; latestDate: string; games: Set<number>; hr: number; sb: number; hits: number; doubles: number; triples: number; singles: number; at_bats: number; walks: number; strikeouts: number; rbis: number; errors: number; assists: number; putouts: number }> = {};
     for (const s of filteredStats) {
       if (!map[s.player_id]) {
-        map[s.player_id] = { name: s.player_name, team: s.team, latestDate: '', games: new Set(), hr: 0, sb: 0, hits: 0, doubles: 0, triples: 0, singles: 0, at_bats: 0, walks: 0, strikeouts: 0, rbis: 0 };
+        map[s.player_id] = { name: s.player_name, team: s.team, latestDate: '', games: new Set(), hr: 0, sb: 0, hits: 0, doubles: 0, triples: 0, singles: 0, at_bats: 0, walks: 0, strikeouts: 0, rbis: 0, errors: 0, assists: 0, putouts: 0 };
       }
       const p = map[s.player_id];
       const gameDate = gameDateMap[s.game_pk] || '';
@@ -131,6 +164,9 @@ function App() {
       p.walks += s.walks;
       p.strikeouts += s.strikeouts;
       p.rbis += s.rbis;
+      p.errors += s.errors;
+      p.assists += s.assists;
+      p.putouts += s.putouts;
     }
     return map;
   }, [filteredStats, gameDateMap]);
@@ -252,7 +288,7 @@ function App() {
     if (!selectedTeam) return [];
     return Object.entries(playerMap)
       .filter(([, p]) => p.team === selectedTeam)
-      .sort(([, a], [, b]) => a.name.localeCompare(b.name));
+      .sort(([, a], [, b]) => b.games.size - a.games.size || a.name.localeCompare(b.name));
   }, [playerMap, selectedTeam]);
 
   const selectedPlayerData = useMemo(() => {
@@ -264,10 +300,11 @@ function App() {
       .flatMap((s) => s.hit_events);
     const pa = p.at_bats + p.walks;
     const avg = p.at_bats > 0 ? (p.hits / p.at_bats).toFixed(3).replace(/^0/, '') : '.000';
-    const obp = pa > 0 ? ((p.hits + p.walks) / pa).toFixed(3).replace(/^0/, '') : '.000';
-    const slg = p.at_bats > 0 ? ((p.singles + p.doubles * 2 + p.triples * 3 + p.hr * 4) / p.at_bats).toFixed(3).replace(/^0/, '') : '.000';
-    const opsVal = (parseFloat(obp) + parseFloat(slg));
-    const ops = opsVal.toFixed(3).replace(/^0/, '');
+    const obpNum = pa > 0 ? (p.hits + p.walks) / pa : 0;
+    const slgNum = p.at_bats > 0 ? (p.singles + p.doubles * 2 + p.triples * 3 + p.hr * 4) / p.at_bats : 0;
+    const obp = obpNum.toFixed(3).replace(/^0/, '') || '.000';
+    const slg = slgNum.toFixed(3).replace(/^0/, '') || '.000';
+    const ops = (obpNum + slgNum).toFixed(3).replace(/^0/, '');
     return { ...p, avg, obp, slg, ops, events: allEvents, gameCount: p.games.size };
   }, [selectedPlayer, playerMap, filteredStats]);
 
@@ -288,6 +325,23 @@ function App() {
   const totalHRs = filteredStats.reduce((sum, s) => sum + s.home_runs, 0);
   const totalSBs = filteredStats.reduce((sum, s) => sum + s.stolen_bases, 0);
   const totalKs = filteredPitchers.reduce((sum, s) => sum + s.strikeouts_pitched, 0);
+  const totalErrors = filteredStats.reduce((sum, s) => sum + s.errors, 0);
+  const totalAssists = filteredStats.reduce((sum, s) => sum + s.assists, 0);
+  const totalPutouts = filteredStats.reduce((sum, s) => sum + s.putouts, 0);
+
+  const mostErrors = useMemo(() => {
+    const entries = Object.values(playerMap).filter(p => p.errors > 0);
+    if (!entries.length) return null;
+    const top = entries.sort((a, b) => b.errors - a.errors)[0];
+    return `${top.name} (${top.errors})`;
+  }, [playerMap]);
+
+  const mostAssists = useMemo(() => {
+    const entries = Object.values(playerMap).filter(p => p.assists > 0);
+    if (!entries.length) return null;
+    const top = entries.sort((a, b) => b.assists - a.assists)[0];
+    return `${top.name} (${top.assists})`;
+  }, [playerMap]);
 
   const teamsSeenCount = useMemo(() => {
     const teams = new Set<string>();
@@ -821,6 +875,26 @@ function App() {
                     <div className="fact-label">Favorite day</div>
                     <div className="fact-value" style={{ color: '#fb7185' }}>{favoriteDayOfWeek || '—'}</div>
                   </div>
+                  <div className="fact-card">
+                    <div className="fact-label">Total errors witnessed</div>
+                    <div className="fact-value" style={{ color: '#f87171' }}>{totalErrors}</div>
+                  </div>
+                  <div className="fact-card">
+                    <div className="fact-label">Most errors</div>
+                    <div className="fact-value" style={{ color: '#fb923c' }}>{mostErrors || '—'}</div>
+                  </div>
+                  <div className="fact-card">
+                    <div className="fact-label">Total assists witnessed</div>
+                    <div className="fact-value" style={{ color: '#34d399' }}>{totalAssists}</div>
+                  </div>
+                  <div className="fact-card">
+                    <div className="fact-label">Most assists</div>
+                    <div className="fact-value" style={{ color: '#60a5fa' }}>{mostAssists || '—'}</div>
+                  </div>
+                  <div className="fact-card">
+                    <div className="fact-label">Total putouts witnessed</div>
+                    <div className="fact-value" style={{ color: '#c084fc' }}>{totalPutouts}</div>
+                  </div>
                 </div>
               </div>
             )}
@@ -901,9 +975,9 @@ function App() {
 
                 <div className="team-cards">
                   {teamStats.map((t) => (
-                    <div key={t.abbr} className="team-card">
+                    <div key={t.abbr} className="team-card" style={{ borderLeftColor: TEAM_COLORS[t.abbr]?.[0] || 'var(--border)' }}>
                       <div className="team-card-header">
-                        <span className="team-card-abbr">{t.abbr}</span>
+                        <span className="team-card-abbr" style={{ color: TEAM_COLORS[t.abbr]?.[0] || 'var(--text)' }}>{t.abbr}</span>
                         <span className="team-card-record">
                           {t.wins}-{t.losses}{t.ties > 0 ? `-${t.ties}` : ''}
                           {(t.wins + t.losses) > 0 && <span className="team-card-pct"> ({(t.winPct * 100).toFixed(0)}%)</span>}

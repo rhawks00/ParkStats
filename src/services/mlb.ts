@@ -71,6 +71,9 @@ export async function fetchGameStats(gamePk: number): Promise<{
           stolen_bases: batting.stolenBases || 0,
           strikeouts: batting.strikeOuts || 0,
           walks: batting.baseOnBalls || 0,
+          errors: player.stats?.fielding?.errors || 0,
+          assists: player.stats?.fielding?.assists || 0,
+          putouts: player.stats?.fielding?.putOuts || 0,
           hit_events: playerHits.map((e) => ({
             type: e.type,
             description: e.description,

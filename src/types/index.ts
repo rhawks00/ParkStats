@@ -27,6 +27,9 @@ export interface PlayerGameStats {
   stolen_bases: number;
   strikeouts: number;
   walks: number;
+  errors: number;
+  assists: number;
+  putouts: number;
   hit_events: HitEvent[];
 }
 

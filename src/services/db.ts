@@ -63,6 +63,9 @@ export async function getAllPlayerStats(): Promise<PlayerGameStats[]> {
   if (error) throw error;
   return (data || []).map((row: any) => ({
     ...row,
+    errors: row.errors || 0,
+    assists: row.assists || 0,
+    putouts: row.putouts || 0,
     hit_events: typeof row.hit_events === 'string'
       ? JSON.parse(row.hit_events)
       : row.hit_events || [],
