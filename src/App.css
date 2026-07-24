@@ -491,8 +491,8 @@ main { width: 100%; max-width: 900px; margin: 0 auto; padding: 20px 24px; }
 }
 
 .team-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
@@ -1177,7 +1177,6 @@ main { width: 100%; max-width: 900px; margin: 0 auto; padding: 20px 24px; }
     padding: 10px 12px;
   }
 
-  .team-cards { grid-template-columns: 1fr; }
   .team-sort-row { flex-wrap: wrap; }
   .team-sort-row .cat-pills { display: none; }
   .team-sort-row .cat-select { display: block; }

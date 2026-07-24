@@ -747,7 +747,7 @@ function App() {
                         <StatBar
                           label={`${entry.name} (${entry.team})`}
                           value={entry.display}
-                          max={batCat === 'krate' || batCat === 'bbrate' ? 0.4 : batCat === 'avg' ? 0.45 : batCat === 'obp' ? 0.55 : (batLeaderboard[0]?.val || 1)}
+                          max={batCat === 'krate' ? batLeaderboard[batLeaderboard.length - 1]?.val || 1 : batCat === 'avg' ? 0.45 : batCat === 'obp' ? 0.55 : (batLeaderboard[0]?.val || 1)}
                           color={BAT_CATS.find((c) => c.id === batCat)!.color}
                         />
                       </div>
